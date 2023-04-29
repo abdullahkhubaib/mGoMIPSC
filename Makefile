@@ -1,4 +1,4 @@
-SOURCES = main.cpp error.cpp scanner.cpp Token.cpp Node.cpp parser.cpp SymbolTable.cpp semantic.cpp gen.cpp
+SOURCES = main.cpp src/error.cpp src/scanner.cpp src/Token.cpp src/Node.cpp src/parser.cpp src/SymbolTable.cpp src/semantic.cpp src/gen.cpp
 CPPC = g++
 CPPFLAGS = -c -Wall -O2
 OBJECTS = $(SOURCES:.cpp=.o)
@@ -6,14 +6,14 @@ TARGET = go
 
 all: $(TARGET)
 
-error.o: error.h
-Token.o: Token.h
-scanner.o: scanner.h
-Node.o: Node.h
-parser.o: parser.h
-SymbolTable.o: SymbolTable.h
-semantic.o: semantic.h
-gen.o: gen.h
+error.o: include/error.h
+Token.o: include/Token.h
+scanner.o: include/scanner.h
+Node.o: include/Node.h
+parser.o: include/parser.h
+SymbolTable.o: include/SymbolTable.h
+semantic.o: include/semantic.h
+gen.o: include/gen.h
 %.o : %.c
 $(OBJECTS): Makefile
 
@@ -25,5 +25,5 @@ $(TARGET): $(OBJECTS)
 
 .PHONY: clean
 clean:
-	rm -f *~ *.o *.s $(TARGET)
+	rm -f *~ *.o src/*.o *.s $(TARGET)
 
