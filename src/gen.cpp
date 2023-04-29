@@ -198,34 +198,17 @@ void gen::gen_func(Node *func, std::stringstream &ss) {
     });
 
     // A pre-scan to optimize the tree and to allocate registers for local variables.
-    func->preorder([this, &isLeaf](Node* n, bool running){
-        switch(n->type) {
-            // Add all the local variables to a hashmap and assign registers for them.
-            case VAR_DEF:
-                if(local_vars.size() < 8)
-                    local_vars.emplace(n->sym, "$s" + std::to_string(local_vars.size()));
-                else
-                    local_vars.emplace(n->sym, "$t" + std::to_string(17 - local_vars.size()));
-                break;
-            case FUNCCALL:
+    func->preorder([this, &isLeaf](Node* n, bool running) {
+        // Add all the local variables to a hashmap and assign registers for them.
+        if (n->type == VAR_DEF) {
+            if (local_vars.size() < 8)
+                local_vars.emplace(n->sym, "$s" + std::to_string(local_vars.size()));
+            else
+                local_vars.emplace(n->sym, "$t" + std::to_string(17 - local_vars.size()));
+        } else if(n->type == FUNCCALL)
                 isLeaf = false;
-                break;
-            // Optimizes the tree to minimize register usage. Works by flipping the operands of commutative operators
-            // to create a more left heavy tree. Left register is always reused before right and as a result, a left
-            // heavy tree is more reuse friendly.
-            case ADD_EXPR:
-            case MULTIPLY_EXPR:
-            case EQUAL_EXPR:
-            case NOT_EQUAL_EXPR:
-                if(n->children[0]->max_depth() < n->children[1]->max_depth())
-                    std::swap(n->children[0], n->children[1]);
-            default:
-                break;
-        }
     });
 
-
-    //func->display();
 
     // Add function arguments to the hashmap
     int arg_i = 0;
@@ -332,8 +315,9 @@ static const std::string op_to_i[] = {
 };
 
 // Parses the expression in a bottom-up manner and generates code for it.
+// Parses deeper subtrees first to minimize register usage.
 void gen::gen_expression(Node *expression, std::stringstream &ss) {
-    expression->postorder([this, &ss](Node* n, bool running) {
+    expression->postorder_depth([this, &ss](Node* n, bool running) {
         switch(n->type) {
             // Loads literals into registers.
             case INT_T:
