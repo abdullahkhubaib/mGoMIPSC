@@ -106,6 +106,39 @@ void Node::postorder(const std::function<void(Node *, bool&)> &func) {
     }
 }
 
+// Postorder traversal but it traverses children based on their depth.
+void Node::postorder_depth(const std::function<void(Node *, bool&)> &func) {
+    // Calculate the max depth for the current tree.
+    max_depth();
+    std::stack<std::pair<Node*, bool>> stack; // Second value is true if the node has been visited.
+    stack.emplace(this, false);
+    while(!stack.empty()) {
+        auto& [n, visited] = stack.top();
+
+        // if the current node has no children or if they've all been visited.
+        if (n->children.empty() || visited) {
+            stack.pop();
+
+            // Setting running to false in provided function ends the traversal early
+            bool running = true;
+            func(n, running);
+            if(!running) return;
+        }
+            // Iterate through the children in reverse and add to the stack.
+        else {
+            visited = true;
+            std::vector<Node *> c(n->children);
+            // Sort children based on their depth.
+            std::sort(c.begin(), c.end(), [](Node* a, Node* b) {
+                return a->m_depth > b->m_depth;
+            });
+            for (auto it = c.rbegin(); it != c.rend(); it++)
+                stack.emplace(*it, 0);
+        }
+
+    }
+}
+
 // Uses a Stack to display the tree
 void Node::display() {
     std::stack<std::pair<Node*, int>> stack;
@@ -125,15 +158,20 @@ void Node::display() {
     }
 }
 
-// Uses recursion to find the max depth of the tree.
+// Find the maximum depth of the tree.
 int Node::max_depth() {
-    if(m_depth != 0)
-        return m_depth;
-    if(children.empty()) return 1;
-    std::vector<int> depths(children.size());
-    for(int i = 0; i < (int) children.size(); i++)
-        depths[i] = children[i]->max_depth();
-    m_depth = 1 + *max_element(depths.begin(), depths.end());
+    if(m_depth == 0)
+        postorder([](Node* n, bool running) {
+            if(n->children.empty())
+                n->m_depth = 1;
+            else {
+                int max = 0;
+                for(Node* child: n->children)
+                    if(child->m_depth > max)
+                        max = child->m_depth + 1;
+                n->m_depth = max;
+            }
+        });
     return m_depth;
 }
 

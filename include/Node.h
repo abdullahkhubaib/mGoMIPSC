@@ -43,6 +43,7 @@ public:
     std::string to_string() const;
     void preorder(const std::function<void(Node*, bool&)>& func);
     void postorder(const std::function<void(Node*, bool&)>& func);
+    void postorder_depth(const std::function<void(Node*, bool&)>& func);
     void display();
 };
 
