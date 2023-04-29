@@ -2,7 +2,7 @@
 // Created by abdul on 2023-03-09.
 //
 
-#include "semantic.h"
+#include "../include/semantic.h"
 
 
 void semantic::check(Node* AST) {

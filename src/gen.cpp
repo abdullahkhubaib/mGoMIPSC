@@ -2,7 +2,7 @@
 // Created by abdul on 2023-03-27.
 //
 
-#include "gen.h"
+#include "../include/gen.h"
 
 // Hashmap defining pre-defined functions.
 const std::unordered_map<std::string, std::string> gen::predef = {

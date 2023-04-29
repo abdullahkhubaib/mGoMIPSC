@@ -2,7 +2,7 @@
 // Created by abdul on 2023-01-28.
 //
 
-#include "scanner.h"
+#include "../include/scanner.h"
 
 Scanner::Scanner(const std::string& fileName)
         : file(fileName), lineNo(1), reread(false), rereadT(false), last(0), lastT(EOFILE, -1)  {

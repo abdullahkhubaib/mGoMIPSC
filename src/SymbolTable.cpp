@@ -2,7 +2,7 @@
 // Created by abdul on 2023-03-09.
 //
 
-#include "SymbolTable.h"
+#include "../include/SymbolTable.h"
 
 
 SymbolTable::SymbolTable() {

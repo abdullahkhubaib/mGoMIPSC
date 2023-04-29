@@ -2,7 +2,7 @@
 // Created by abdul on 2023-01-28.
 //
 
-#include "error.h"
+#include "../include/error.h"
 
 
 int warnings = 0;

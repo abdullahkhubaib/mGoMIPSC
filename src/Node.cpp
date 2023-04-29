@@ -3,7 +3,7 @@
 //
 
 
-#include "Node.h"
+#include "../include/Node.h"
 
 const std::string Node::typeNames[] = {
         "program", "var", "globvar", "func", "newid", "typeid", "sig", "formals",

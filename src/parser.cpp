@@ -3,7 +3,7 @@
 //
 
 
-#include "parser.h"
+#include "../include/parser.h"
 
 Parser::Parser(Scanner *s): scanner(s), AST(nullptr) {
 }
