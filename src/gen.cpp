@@ -46,8 +46,7 @@ std::string gen::generate() {
     // Define all the string literals.
     out << emit(".data");
     // Sort the strings in lexical order to make comparisons easier.
-    std::vector<std::pair<std::string, std::string>> s_strings(strings.size());
-    std::copy(strings.begin(), strings.end(), s_strings.begin());
+    std::vector<std::pair<std::string, std::string>> s_strings(strings.begin(), strings.end());
     std::sort(s_strings.begin(), s_strings.end());
     for(auto& [str, label]: s_strings) {
         out << emit_label(label);
