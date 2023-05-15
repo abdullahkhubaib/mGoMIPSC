@@ -103,13 +103,16 @@ const std::unordered_map<std::string, std::string> runtime::funcs = {
 };
 
 void runtime::include(const std::string& name) {
-    used.emplace(name);
+    // Halt is already defined in the runtime.
+    if(name == "halt") return;
+    if(!funcs.count("P" + name))
+        error("Function '" + name + "' does not exist.");
+    used.emplace("P" + name);
+
 }
 
 std::string runtime::get() {
     std::stringstream ss;
-    // Halt is already defined in the runtime.
-    used.erase("Phalt");
     // Define only the runtime functions that are needed.
     for(const std::string& p: used)
         ss << funcs.at(p);

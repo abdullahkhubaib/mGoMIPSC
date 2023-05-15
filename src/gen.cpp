@@ -120,7 +120,7 @@ void gen::gen_func(Node *func, std::stringstream &ss) {
 
     // Function does not return a value.
     if(!isVoid) {
-        r.include("Perror");
+        r.include("error");
         std::string message = "error: function '" + func->children[0]->attr + "' must return a value\n";
         body << emit("la $a0, " + stoLabel(message));
         body << emit("j Perror");
@@ -265,7 +265,7 @@ void gen::gen_expression(Node *expression, std::stringstream &ss) {
                 if(const auto& f = funcs.find(n->children[0]->sym); f != funcs.end())
                     ss << emit("jal " + f->second);
                 else {
-                    r.include("P" + n->children[0]->attr);
+                    r.include(n->children[0]->attr);
                     ss << emit("jal P" + n->children[0]->attr);
                 }
                 // Retrieves the arguments from the stack after the function call returns
@@ -282,8 +282,8 @@ void gen::gen_expression(Node *expression, std::stringstream &ss) {
             // Handle division by 0 errors and other division/mod checks. Falls through to evaluate the operator.
             case DIVIDE_EXPR:
             case MOD_EXPR:
-                r.include("PDMChk");
-                r.include("Perror");
+                r.include("DMChk");
+                r.include("error");
                 ss << emit("subu $sp, $sp, 8");
                 ss << emit("sw $a0, 0($sp)");
                 ss << emit("sw $a1, 4($sp)");
