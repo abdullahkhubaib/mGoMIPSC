@@ -7,13 +7,12 @@
 
 #include "Node.h"
 #include "error.h"
+#include "runtime.h"
 #include <string>
 #include <sstream>
-#include <unordered_map>
 #include <vector>
 #include <regex>
 #include <set>
-#include <unordered_set>
 
 class gen {
 private:
@@ -25,8 +24,7 @@ private:
     std::unordered_map<Record*, std::string> glob_vars; // store global variables and their corresponding labels.
     std::unordered_map<Record*, std::string> local_vars;
     std::unordered_map<Record*, std::string> funcs;
-    std::unordered_set<std::string> predef_used;
-    static const std::unordered_map<std::string, std::string> predef;
+    runtime r;
     void gen_func(Node *func, std::stringstream &ss);
     void gen_block(Node *block, std::stringstream &ss, Node *func, int &lNum);
     void gen_expression(Node *expression, std::stringstream &ss);

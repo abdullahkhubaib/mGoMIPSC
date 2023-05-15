@@ -4,108 +4,13 @@
 
 #include "../include/gen.h"
 
-// Hashmap defining pre-defined functions.
-const std::unordered_map<std::string, std::string> gen::predef = {
-        {"Pprints", "Pprints:\n"
-                    "        li $v0, 4\n"
-                    "        syscall\n"
-                    "        jr $ra\n"},
-        {"Pprinti", "Pprinti:\n"
-                    "        li $v0, 1\n"
-                    "        syscall\n"
-                    "        jr $ra\n"},
-        {"Pprintc", "Pprintc:\n"
-                    "        li $v0, 11\n"
-                    "        syscall\n"
-                    "        jr $ra\n"},
-        {"Pprintb", "Pprintb:\n"
-                    "        li $v0, 4\n"
-                    "        beqz $a0, P1printb\n"
-                    "        la $a0, Ptrue\n"
-                    "        j P2printb\n"
-                    "P1printb:\n"
-                    "        la $a0, Pfalse\n"
-                    "P2printb:\n"
-                    "        syscall\n"
-                    "        jr $ra\n"
-                    "        .data\n"
-                    "Ptrue:\n"
-                    "        .asciiz \"true\"\n"
-                    "Pfalse:\n"
-                    "        .asciiz \"false\"\n"
-                    "        .text\n"},
-        {"Plen",    "Plen:\n"
-                    "        subu $sp, $sp, 8\n"
-                    "        sw $t0, 0($sp) # address of char\n"
-                    "        sw $t1, 4($sp) # current char\n"
-                    "        move $t0, $a0\n"
-                    "P1len:\n"
-                    "        lb $t1, 0($t0)\n"
-                    "        beqz $t1, P2len\n"
-                    "        addi $t0, $t0, 1\n"
-                    "        j P1len\n"
-                    "P2len:\n"
-                    "        subu $v0, $t0, $a0 # end - start\n"
-                    "        lw $t0, 0($sp)\n"
-                    "        lw $t1, 4($sp)\n"
-                    "        addu $sp, $sp, 8\n"
-                    "        jr $ra\n"},
-        {"Pgetchar","Pgetchar:\n"
-                    "        subu $sp, $sp, 8\n"
-                    "        sw $a0, 0($sp)\n"
-                    "        sw $a1, 4($sp)\n"
-                    "        li $v0, 8\n"
-                    "        la $a0, Pinput\n"
-                    "        li $a1, 2\n"
-                    "        syscall\n"
-                    "        lb $v0, Pinput\n"
-                    "        bnez $v0, P1getchar\n"
-                    "        li $v0, -1\n"
-                    "        .data\n"
-                    "Pinput: .space 2\n"
-                    "        .align 2\n"
-                    "        .text\n"
-                    "P1getchar:\n"
-                    "        lw $a0, 0($sp)\n"
-                    "        lw $a1, 4($sp)\n"
-                    "        addu $sp, $sp, 8\n"
-                    "        jr $ra\n"},
-        {"Perror",  "Perror:\n"
-                    "        li $v0, 4\n"
-                    "        syscall\n"
-                    "        li $v0, 17\n"
-                    "        li $a0, 1\n"
-                    "        syscall\n"},
-        {"PDMChk",  "PDMChk:\n"
-                    "        beqz $a1, P2DMChk\n"
-                    "        bne $a0, -2147483648, P3DMChk\n"
-                    "        bne $a1, -1, P3DMChk\n"
-                    "        li $v0, 1\n"
-                    "        jr $ra\n"
-                    "        .data\n"
-                    "P1DMChk:\n"
-                    "        .asciiz \"error: division by zero\\n\"\n"
-                    "        .text\n"
-                    "P2DMChk:\n"
-                    "        la $a0, P1DMChk\n"
-                    "        j Perror\n"
-                    "P3DMChk:\n"
-                    "        move $v0, $a1\n"
-                    "        jr $ra\n"}
-};
 
 gen::gen(Node *AST): AST(AST), strings{{"", "S0"}} {}
 
 
 std::string gen::generate() {
     std::stringstream out;
-    out << "        .text\n"
-           "        .globl main\n"
-           "main:\n"
-           "        jal Lmain\n"
-           "Phalt:\n"
-           "        li $v0, 10\n"
-           "        syscall\n";
+    out << runtime::header;
 
     std::stringstream ss;
     // Statically allocate global variables and define function labels
@@ -132,13 +37,8 @@ std::string gen::generate() {
         if(n->type == FUNC_DEF)
             gen_func(n, ss);
 
-
-    // Halt is already defined in the runtime.
-    predef_used.erase("Phalt");
-
-    // Define only the runtime functions that are needed.
-    for(const std::string& p: predef_used)
-        out << predef.at(p);
+    // Add the generated runtime environment
+    out << r.get();
 
     // Add function definitions to the output.
     out << ss.str();
@@ -220,7 +120,7 @@ void gen::gen_func(Node *func, std::stringstream &ss) {
 
     // Function does not return a value.
     if(!isVoid) {
-        predef_used.emplace("Perror");
+        r.include("Perror");
         std::string message = "error: function '" + func->children[0]->attr + "' must return a value\n";
         body << emit("la $a0, " + stoLabel(message));
         body << emit("j Perror");
@@ -365,7 +265,7 @@ void gen::gen_expression(Node *expression, std::stringstream &ss) {
                 if(const auto& f = funcs.find(n->children[0]->sym); f != funcs.end())
                     ss << emit("jal " + f->second);
                 else {
-                    predef_used.emplace("P" + n->children[0]->attr);
+                    r.include("P" + n->children[0]->attr);
                     ss << emit("jal P" + n->children[0]->attr);
                 }
                 // Retrieves the arguments from the stack after the function call returns
@@ -382,8 +282,8 @@ void gen::gen_expression(Node *expression, std::stringstream &ss) {
             // Handle division by 0 errors and other division/mod checks. Falls through to evaluate the operator.
             case DIVIDE_EXPR:
             case MOD_EXPR:
-                predef_used.emplace("PDMChk");
-                predef_used.emplace("Perror");
+                r.include("PDMChk");
+                r.include("Perror");
                 ss << emit("subu $sp, $sp, 8");
                 ss << emit("sw $a0, 0($sp)");
                 ss << emit("sw $a1, 4($sp)");
