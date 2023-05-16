@@ -4,6 +4,7 @@
 
 #ifndef GOLF_RUNTIME_H
 #define GOLF_RUNTIME_H
+#include "error.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
