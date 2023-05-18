@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
-#include "SymbolTable.h"
 
 // 24 to 38 are operator expressions.
 enum NODE_TYPE {PROGRAM, VAR_DEF, GLOBVAR_DEF, FUNC_DEF,  NEWID, TYPEID, SIG, FORMALS, FORMAL, BLOCK, INT_T, BOOL_T,
@@ -31,7 +30,7 @@ public:
     std::string attr;
     int lineNo;
     std::string sig;
-    Record* sym;
+    int sym;
     std::vector<Node*> children;
     Node(NODE_TYPE type, std::string attr, int lineNo);
     Node(NODE_TYPE type, int lineNo);

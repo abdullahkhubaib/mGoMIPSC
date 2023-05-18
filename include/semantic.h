@@ -19,7 +19,7 @@ private:
     void file_scope_check(Node* AST); // pass 1
     void symbol_check(Node* AST); // pass 2
     void block_symbol_check(Node* block);
-    Record* varDecl(Node* decl);
+    const Record& varDecl(Node* decl);
     void expression_symbol_check(Node* expression);
     void funccall_symbol_check(Node* n);
     void ifelse_for_symbol_check(Node* n);

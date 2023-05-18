@@ -13,16 +13,16 @@ const std::string Node::typeNames[] = {
         ">", "=", "<=", ">="};
 
 Node::Node(NODE_TYPE type, std::string attr, int lineNo)
-    : type(type), attr(std::move(attr)), lineNo(lineNo)  {}
+    : type(type), attr(std::move(attr)), lineNo(lineNo), sym(-1) {}
 
 Node::Node(NODE_TYPE type, int lineNo)
-    : type(type), lineNo(lineNo)  {}
+    : type(type), lineNo(lineNo), sym(-1) {}
 
 Node::Node(NODE_TYPE type, std::string attr)
-    : type(type), attr(std::move(attr)), lineNo(-1) {}
+    : type(type), attr(std::move(attr)), lineNo(-1), sym(-1) {}
 
 Node::Node(NODE_TYPE type)
-    : type(type), lineNo(-1)  {}
+    : type(type), lineNo(-1), sym(-1) {}
 
 // Recursively delete all children in the tree.
 Node::~Node() {
@@ -41,20 +41,8 @@ std::string Node::to_string() const {
         ss << " [" << attr << "]";
     if(!sig.empty())
         ss << " sig=" << sig;
-    if(sym != nullptr) {
-        // displays the pointer as a hex number with 16 digits and underscores separating the bytes.
-        std::stringstream addrS;
-        // Convert to hex and pad with zeroes to create a 16 character long string
-        addrS << std::hex << std::setw(16) << std::setfill('0') << reinterpret_cast<std::uintptr_t>(sym);
-        std::string addr = addrS.str();
-        std::string formatted;
-        formatted.reserve(32);
-        // Add underscores between every 2 characters.
-        for (int i = 0; i < 16; i += 2)
-            formatted += addr.substr(i, 2) + "_";
-        // Remove last underscore.
-        formatted.pop_back();
-        ss << " sym=0x" << formatted;
+    if(sym != -1) {
+        ss << " sym_id=" << sym;
     }
     if(lineNo > -1)
         ss << " @ line " << lineNo;

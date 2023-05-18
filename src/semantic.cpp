@@ -20,12 +20,12 @@ void semantic::file_scope_check(Node *AST) {
         if(decl->type == FUNC_DEF) {
             const int& lineNo = decl->children[0]->lineNo;
             // Search for the type and check if it is valid.
-            Record* type = stab.lookup(decl->children[1]->children[1]->attr, lineNo); // Return type.
-            if(!type->is_type)
+            const Record& type = stab.lookup(decl->children[1]->children[1]->attr, lineNo); // Return type.
+            if(!type.is_type)
                 error("expected a type, but got '" + decl->children[1]->children[1]->attr +"' instead", lineNo);
 
             // Search the function body for return statements.
-            if(type->sig != "void") {
+            if(type.sig != "void") {
                 bool found = false;
                 decl->children[2]->preorder([this, &found](Node* n, bool& running) {
                     if(n->type == RETURN_STMT) {
@@ -36,7 +36,7 @@ void semantic::file_scope_check(Node *AST) {
                 if(!found)
                     error("no return statement in function", lineNo);
             }
-            decl->children[1]->children[1]->sym = type; // Store the record address for the type.
+            decl->children[1]->children[1]->sym = type.id; // Store the record address for the type.
 
             auto& formals = decl->children[1]->children[0]->children;
 
@@ -47,26 +47,26 @@ void semantic::file_scope_check(Node *AST) {
                 // Reserve space for the string to reduce copying.
                 sig.reserve(formals.size() * 4 + 9);
                 for(Node* formal : formals)
-                    sig += stab.lookup(formal->children[1]->attr, lineNo)->sig + ",";
+                    sig += stab.lookup(formal->children[1]->attr, lineNo).sig + ",";
 
                 sig.pop_back(); // remove comma at the end
             }
 
-            sig += ") " + type->sig;
+            sig += ") " + type.sig;
             std::string& name = decl->children[0]->attr;
-            decl->sym = stab.define(name, sig, lineNo);
+            decl->sym = stab.define(name, sig, lineNo).id;
 
             if(name == "main") {
                 if(!formals.empty())
                     error("main() cannot have arguments.", lineNo);
-                if(type->sig != "void")
+                if(type.sig != "void")
                     error("main() cannot have a return type.", lineNo);
                 AST->sym = decl->sym;
             }
         } else // Global variable declaration
-            decl->sym = varDecl(decl);
+            decl->sym = varDecl(decl).id;
     }
-    if(AST->sym == nullptr)
+    if(AST->sym == -1)
         error("No main() function in program.");
 }
 
@@ -76,43 +76,44 @@ void semantic::symbol_check(Node* AST) {
         if(decl->type == FUNC_DEF) {
             // Checks if the return type is still valid.
             Node* ret_type = decl->children[1]->children[1];
-            if(!stab.lookup(ret_type->attr, ret_type->lineNo)->is_type)
+            Record& ret_type_record = stab.lookup(ret_type->attr, ret_type->lineNo);
+            if(!ret_type_record.is_type)
                 error("expected a type, but got '" + ret_type->attr +"' instead", ret_type->lineNo);
             // Create a new scope with the return type as the tag.
-            stab.open_scope(ret_type->sym->sig);
+            stab.open_scope(ret_type_record.sig);
             // Define the function parameters in the new scope.
             for(Node* formal : decl->children[1]->children[0]->children)
-                formal->children[0]->sym = varDecl(formal);
+                formal->children[0]->sym = varDecl(formal).id;
             block_symbol_check(decl->children[2]);
         }
         // Checks if the global variable's type has been redefined.
-        else if(Node* type = decl->children[1]; !stab.lookup(type->attr, type->lineNo)->is_type)
+        else if(Node* type = decl->children[1]; !stab.lookup(type->attr, type->lineNo).is_type)
                 error("expected a type, but got '" + type->attr +"' instead", type->lineNo);
     }
 }
 
 // Define a variable in the symbol table and return a pointer to it's record.
-Record* semantic::varDecl(Node* decl) {
+const Record& semantic::varDecl(Node* decl) {
     const int& lineNo = decl->children[0]->lineNo;
     std::string& name = decl->children[0]->attr;
     // Search for the type and check if it is valid.
-    Record* type = stab.lookup(decl->children[1]->attr, lineNo);
-    if(!type->is_type)
+    const Record& type = stab.lookup(decl->children[1]->attr, lineNo);
+    if(!type.is_type)
         error("expected a type, but got '" + decl->children[1]->attr +"' instead", lineNo);
 
-    decl->children[1]->sym = type; // Store the address of the type record.
+    decl->children[1]->sym = type.id; // Store the address of the type record.
     // Define the symbol into the table and return the address.
-    return stab.define(name, type->sig, lineNo);
+    return stab.define(name, type.sig, lineNo);
 }
 
 void semantic::block_symbol_check(Node* block) {
     for(Node* statement: block->children) {
         switch (statement->type) {
             case VAR_DEF:
-                statement->sym = varDecl(statement);
+                statement->sym = varDecl(statement).id;
                 break;
             case ASSIGN_EXPR:
-                if(Node* n = statement->children[0]; n->type == BOOL_T && stab.lookup(n->attr, n->lineNo)->sig != "bool")
+                if(Node* n = statement->children[0]; n->type == BOOL_T && stab.lookup(n->attr, n->lineNo).sig != "bool")
                     n->type = ID_T;
                 if(statement->children[0]->type == BOOL_T)
                     error("Can't assign to a constant.", statement->lineNo);
@@ -177,17 +178,17 @@ void semantic::expression_symbol_check(Node* expression) {
                 break;
             case BOOL_T:
             case ID_T: {
-                Record* id = stab.lookup(n->attr, n->lineNo);
-                if(id->is_type)
-                    error("'" + id->sig + "' type identifier is not allowed here.", n->lineNo);
+                Record& id = stab.lookup(n->attr, n->lineNo);
+                if(id.is_type)
+                    error("'" + id.sig + "' type identifier is not allowed here.", n->lineNo);
                 // convert bool to identifier if it has been redefined.
-                if(n->type == BOOL_T && id->sig != "bool")
+                if(n->type == BOOL_T && id.sig != "bool")
                     n->type = ID_T;
-                std::string sig = id->sig;
+                std::string sig = id.sig;
                 auto pos = sig.find(' ');
                 // Only get the parameters if it's a function.
                 n->sig = (pos == std::string::npos) ? sig : sig.substr(0, pos);
-                n->sym = id;
+                n->sym = id.id;
                 break;
             }
             case FUNCCALL:
@@ -240,8 +241,8 @@ void semantic::expression_symbol_check(Node* expression) {
 void semantic::funccall_symbol_check(Node *n) {
     if(n->children[0]->type != ID_T)
         error("function name must be an identifier.", n->children[0]->lineNo);
-    Record* r = n->children[0]->sym;
-    std::string sig = r->sig;
+    const Record& r = stab.lookup(n->children[0]->attr, n->children[0]->lineNo);
+    std::string sig = r.sig;
     auto pos = sig.find(' ');
     if(pos == std::string::npos)
         error("'" + n->children[0]->attr + "' is not a function.");
