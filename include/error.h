@@ -8,8 +8,6 @@
 
 #include <iostream>
 
-extern int warnings;
-
 void warning(const std::string& message, int lineNo);
 
 void error(const std::string& message, int lineNo);
