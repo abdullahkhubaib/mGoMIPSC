@@ -33,3 +33,24 @@ Inputting a file to be read by the executable:
 ```bash
 spim -file <output> < <input>
 ```
+
+## Defining Variables
+
+Currently there is only one way to create variables and initialization must be performed seperately.
+```go
+var <identifier> <type>
+<identifier> = <value>
+```
+
+Variables can be of the 3 following types:
+```go
+var a int
+a = 12
+
+var b string
+b = "Dog"
+
+var c bool
+c = false
+```
+
