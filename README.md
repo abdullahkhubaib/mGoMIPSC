@@ -54,3 +54,23 @@ var c bool
 c = false
 ```
 
+Variables can either be created globally or locally within a scope.
+
+## Functions
+
+Functions can only be created in the global scope and must be defined using the following syntax:
+```go
+func <identifier>(<identifier> <type>, ..., <identifier> <type>) <type> { }
+```
+
+The function can take zero or more arguments and can return a value. The return type must be left empty for void functions.
+All functions that are not void must return a value of the data type that is provided in the function defintion.
+Void functions can only use an empty return.
+
+
+In order for a program to be considered valid and to be compiled succesfully, it must contain a main function which has no arguments and no return type:
+```go
+func main() {}
+```
+
+This function acts as the entry point for the program.
